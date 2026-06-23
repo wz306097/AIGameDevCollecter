@@ -1,0 +1,33 @@
+[project]
+name = "test-game"
+engine = "godot"
+engine_version = "4.3"
+main_scene = "scenes/main.tscn"
+
+[[harnesses]]
+id = "claude-code-opus-base"
+harness = "claude-code"
+model = "opus"
+skills = []
+description = "Claude Code with Opus, no custom skills"
+
+[[harnesses]]
+id = "cursor-sonnet"
+harness = "cursor"
+model = "claude-sonnet"
+skills = []
+description = "Cursor with Claude Sonnet"
+
+[validation]
+test_scenes = ["scenes/**/*.tscn"]
+exclude_paths = ["addons/**"]
+l2_timeout = 30
+
+[conventions]
+script_naming = "snake_case"
+scene_naming = "PascalCase"
+banned_patterns = ["get_node(\"../../\")"]
+
+[labels]
+types = ["A1", "A2", "A3", "B1", "B2", "B3", "C1", "C2", "C3"]
+custom_tags = ["physics", "ai-behavior", "ui"]
