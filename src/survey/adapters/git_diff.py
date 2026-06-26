@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -23,6 +24,11 @@ class GitDiffAdapter:
         until: str,
         gap_minutes: int = 30,
     ) -> list[Session]:
+        try:
+            git_run(["rev-parse", "--verify", "HEAD"], cwd=repo_root)
+        except subprocess.CalledProcessError:
+            return []
+
         log_output = git_run(
             ["log", f"--since={since}", f"--until={until}", "--pretty=format:%H|%aI", "--name-only"],
             cwd=repo_root,

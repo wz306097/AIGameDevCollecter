@@ -34,3 +34,9 @@ def test_infer_sessions_sets_harness_fallback(tmp_git_repo: Path):
     adapter = GitDiffAdapter()
     sessions = adapter.infer_sessions(tmp_git_repo, since="1 hour ago", until="now")
     assert sessions[-1].harness == "unknown"
+
+
+def test_infer_sessions_empty_repo(tmp_empty_git_repo: Path):
+    adapter = GitDiffAdapter()
+    sessions = adapter.infer_sessions(tmp_empty_git_repo, since="1 hour ago", until="now")
+    assert sessions == []

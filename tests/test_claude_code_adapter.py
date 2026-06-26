@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from survey.adapters.claude_code import ClaudeCodeAdapter
+from survey.adapters import get_adapter
 from survey.models import Session, HarnessEvent
 
 
@@ -13,6 +14,11 @@ def test_parse_transcript_returns_session():
     assert isinstance(session, Session)
     assert session.harness == "claude-code"
     assert session.session_id.startswith("claude-code_")
+
+
+def test_get_adapter_loads_claude_code_adapter():
+    adapter = get_adapter("claude-code")
+    assert isinstance(adapter, ClaudeCodeAdapter)
 
 
 def test_parse_transcript_extracts_prompts():

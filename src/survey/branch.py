@@ -31,19 +31,50 @@ class BranchStore:
     def init_branch(self) -> None:
         if self.branch_exists():
             return
-        current_branch = git_run(["rev-parse", "--abbrev-ref", "HEAD"], cwd=self.repo_root).strip()
-        git_run(["checkout", "--orphan", BRANCH_NAME], cwd=self.repo_root)
-        git_run(["rm", "-rf", "."], cwd=self.repo_root)
-        for dirname in ("sessions", "transcripts", "reports"):
-            d = self.repo_root / dirname
-            d.mkdir(exist_ok=True)
-            (d / ".gitkeep").touch()
-            git_run(["add", f"{dirname}/.gitkeep"], cwd=self.repo_root)
+
+        env_copy = os.environ.copy()
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".idx") as tmp:
+            tmp_index = tmp.name
+
         default_config = '[project]\nname = ""\nengine = "godot"\nengine_version = "4.3"\n'
-        (self.repo_root / "survey.toml").write_text(default_config)
-        git_run(["add", "survey.toml"], cwd=self.repo_root)
-        git_run(["commit", "-m", "Initialize survey branch"], cwd=self.repo_root)
-        git_run(["checkout", current_branch], cwd=self.repo_root)
+        initial_files = {
+            "sessions/.gitkeep": "",
+            "transcripts/.gitkeep": "",
+            "reports/.gitkeep": "",
+            "survey.toml": default_config,
+        }
+
+        try:
+            env_copy["GIT_INDEX_FILE"] = tmp_index
+            subprocess.run(
+                ["git", "read-tree", "--empty"],
+                cwd=str(self.repo_root), check=True, capture_output=True, env=env_copy,
+            )
+            for path, content in initial_files.items():
+                blob_result = subprocess.run(
+                    ["git", "hash-object", "-w", "--stdin"],
+                    cwd=str(self.repo_root), check=True, capture_output=True, text=True,
+                    input=content, env=env_copy,
+                )
+                blob_sha = blob_result.stdout.strip()
+                subprocess.run(
+                    ["git", "update-index", "--add", "--cacheinfo", f"100644,{blob_sha},{path}"],
+                    cwd=str(self.repo_root), check=True, capture_output=True, env=env_copy,
+                )
+            tree_result = subprocess.run(
+                ["git", "write-tree"],
+                cwd=str(self.repo_root), check=True, capture_output=True, text=True, env=env_copy,
+            )
+            tree_sha = tree_result.stdout.strip()
+            commit_result = subprocess.run(
+                ["git", "commit-tree", tree_sha, "-m", "Initialize survey branch"],
+                cwd=str(self.repo_root), check=True, capture_output=True, text=True,
+            )
+            commit_sha = commit_result.stdout.strip()
+            git_run(["update-ref", f"refs/heads/{BRANCH_NAME}", commit_sha], cwd=self.repo_root)
+        finally:
+            if os.path.exists(tmp_index):
+                os.unlink(tmp_index)
 
     def _read_file(self, path: str) -> str:
         return git_run(["show", f"{BRANCH_NAME}:{path}"], cwd=self.repo_root)

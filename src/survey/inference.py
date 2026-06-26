@@ -75,6 +75,12 @@ def find_task_group(
     session: Session,
     existing_sessions: list[Session],
 ) -> tuple[str | None, str]:
+    session_commits = set(session.commits)
+    if session_commits:
+        for existing in existing_sessions:
+            if session_commits & set(existing.commits):
+                return existing.session_id, "high"
+
     session_files = set(session.changed_files)
     if not session_files:
         return None, "none"

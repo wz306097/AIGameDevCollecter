@@ -15,6 +15,7 @@ DEFAULT_GLOBAL_CONFIG: dict = {
     },
     "transcript_sources": {
         "claude-code": "~/.claude/projects/*/sessions/",
+        "codex": "~/.codex/sessions/**/*.jsonl",
         "cursor": "~/.cursor-tutor/state/logs/",
         "copilot": "",
     },

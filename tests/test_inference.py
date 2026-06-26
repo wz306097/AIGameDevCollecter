@@ -53,3 +53,14 @@ def test_find_task_group_no_overlap():
     group, conf = find_task_group(new_session, existing)
     assert group is None
     assert conf == "none"
+
+
+def test_find_task_group_uses_commit_overlap():
+    new_session = Session(session_id="codex", harness="codex", commits=["abc1234"])
+    existing = [
+        Session(session_id="unknown_1", harness="unknown", changed_files=["a.gd"], commits=["def5678"]),
+        Session(session_id="unknown_2", harness="unknown", changed_files=["b.gd"], commits=["abc1234"]),
+    ]
+    group, conf = find_task_group(new_session, existing)
+    assert group == "unknown_2"
+    assert conf == "high"
